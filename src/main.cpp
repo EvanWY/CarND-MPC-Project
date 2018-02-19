@@ -101,7 +101,7 @@ int main() {
           Eigen::VectorXd vecptsx = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsx.data(), ptsx.size());
           Eigen::VectorXd vecptsy = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsy.data(), ptsy.size());
           auto coeffs = polyfit(vecptsx, vecptsy, 3);
-          Eigen::VectorXd coeffs_der(1);
+          Eigen::VectorXd coeffs_der(3);
           coeffs_der << coeffs[1], 2*coeffs[2], 3*coeffs[3];
           
           double cte = py - polyeval(coeffs, px);
