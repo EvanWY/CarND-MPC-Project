@@ -98,9 +98,9 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          Eigen::VectorXd vecptsx(ptsx.data());
-          Eigen::VectorXd vecptsy(ptsy.data());
-          auto coeffs = polyfit(vecptsx, vecptsx, 3);
+          Eigen::VectorXd vecptsx = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsx.data(), ptsx.size());
+          Eigen::VectorXd vecptsy = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(ptsy.data(), ptsy.size());
+          auto coeffs = polyfit(vecptsx, vecptsy, 3);
           Eigen::VectorXd coeffs_der(1);
           coeffs_der << coeffs[1], 2*coeffs[2], 3*coeffs[3];
           
