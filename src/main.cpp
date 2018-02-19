@@ -87,7 +87,6 @@ int main() {
           // j[1] is the data JSON object
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
-          std::cout << ptsx.size() << std::endl;
           double px = j[1]["x"];
           double py = j[1]["y"];
           double psi = j[1]["psi"];
@@ -99,8 +98,20 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+          auto coeffs = polyfit(ptsx, ptsy, 3);
+          Eigen::VectorXd coeffs_der(1);
+          coeffs_der << coeffs[1], 2*coeffs[2], 3*coeffs[3];
+          
+          double cte = py - polyeval(coeffs, px);
+          double epsi = psi - atan(polyeval(coeffs_der, px));
+
+          Eigen::VectorXd state(6);
+          state << px, py, psi, v, cte, epsi;
+
+          auto vars = mpc.Solve(state, coeffs);
+
+          double steer_value = vars[6] / deg2rad(25);
+          double throttle_value = vars[7];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
