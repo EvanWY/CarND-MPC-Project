@@ -98,8 +98,8 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          Eigen::VectorXd vecptsx(ptsx);
-          Eigen::VectorXd vecptsx(ptsy);
+          Eigen::VectorXd vecptsx(ptsx.data());
+          Eigen::VectorXd vecptsx(ptsy.data());
           auto coeffs = polyfit(vecptsx, vecptsx, 3);
           Eigen::VectorXd coeffs_der(1);
           coeffs_der << coeffs[1], 2*coeffs[2], 3*coeffs[3];
