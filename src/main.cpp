@@ -105,7 +105,11 @@ int main() {
           coeffs_der << coeffs[1], 2*coeffs[2], 3*coeffs[3];
           
           double cte = py - polyeval(coeffs, px);
-          double epsi = psi - atan(polyeval(coeffs_der, px));
+          double dfx = polyeval(coeffs_der, px);
+          double atandfx = atan(dfx);
+          double epsi = psi - atandfx;
+
+          std::cout << cte << " "<< dfx << " "<< atandfx << " "<< epsi << std::endl;
 
           Eigen::VectorXd state(6);
           state << px, py, psi, v, cte, epsi;
