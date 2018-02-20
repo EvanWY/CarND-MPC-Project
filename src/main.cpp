@@ -121,7 +121,7 @@ int main() {
 
           auto vars = mpc.Solve(state, coeffs);
 
-          double steer_value = -vars[0] / deg2rad(25);
+          double steer_value = vars[0] / deg2rad(25);
           double throttle_value = vars[1];
 
           std::cout << "*************" << steer_value << "*" << throttle_value << std::endl;
