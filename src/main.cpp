@@ -109,6 +109,11 @@ int main() {
           double atandfx = atan(dfx);
           double epsi = psi - atandfx;
 
+          while (epsi > pi()/2)
+            epsi -= pi()/2;
+          while (epsi < -pi()/2)
+            epsi += pi()/2;
+
           std::cout << cte << " "<< dfx << " "<< atandfx << " "<< epsi << std::endl;
 
           Eigen::VectorXd state(6);
