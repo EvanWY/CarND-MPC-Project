@@ -86,7 +86,7 @@ class FG_eval {
       fg[1 + cte_start + t] = cte1 - (cte0 + v0 * CppAD::sin(epsi0) * dt);
       fg[1 + epsi_start + t] = epsi1 - (epsi0 + v0 / Lf * delta0 * dt);
 
-      fg[0] += cte1*cte1 + epsi1*epsi1 - 30*(v1-30)*(v1-30) + 0.1*delta0*delta0 + 0.1*a0*a0;
+      fg[0] += cte1*cte1 + epsi1*epsi1 - 0*(v1-30)*(v1-30) + 0.1*delta0*delta0 + 0.1*a0*a0;
     }
   }
 };
