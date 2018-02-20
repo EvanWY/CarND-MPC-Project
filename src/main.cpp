@@ -122,8 +122,8 @@ int main() {
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
-          vector<double> mpc_x_vals = {vars[2], vars[3], vars[4], vars[5], vars[6], vars[7]};
-          vector<double> mpc_y_vals = {vars[27], vars[28], vars[29], vars[30], vars[31], vars[32]};
+          vector<double> mpc_x_vals = {vars[2], vars[3], vars[4], vars[5], vars[6], vars[26]};
+          vector<double> mpc_y_vals = {vars[27], vars[28], vars[29], vars[30], vars[31], vars[51]};
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
