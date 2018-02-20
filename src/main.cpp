@@ -110,9 +110,9 @@ int main() {
           double epsi = psi - atandfx;
 
           while (epsi > pi()/2)
-            epsi -= pi()/2;
+            epsi -= pi();
           while (epsi < -pi()/2)
-            epsi += pi()/2;
+            epsi += pi();
 
           std::cout << cte << " "<< dfx << " "<< atandfx << " "<< epsi << std::endl;
 
