@@ -133,8 +133,19 @@ int main() {
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
-          vector<double> mpc_x_vals = {vars[2], vars[3], vars[4], vars[5], vars[6], vars[26]};
-          vector<double> mpc_y_vals = {vars[27], vars[28], vars[29], vars[30], vars[31], vars[51]};
+          vector<double> mpc_x_vals;
+          vector<double> mpc_y_vals;
+
+
+          for (int i=0; i<25; i++) {
+            double x = vars[i+2] - px;
+            double y = vars[i+27] - py;
+            double x_ = x * cos(psi) + y * sin(psi);
+            double y_ = -x * sin(psi) + y * cos(psi);
+            mpc_x_vals.push_back(x_);
+            mpc_y_vals.push_back(y_);
+          }
+
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
@@ -143,8 +154,17 @@ int main() {
           msgJson["mpc_y"] = mpc_y_vals;
 
           //Display the waypoints/reference line
-          vector<double> next_x_vals = ptsx;
-          vector<double> next_y_vals = ptsy;
+          vector<double> next_x_vals;
+          vector<double> next_y_vals;
+
+          for (int i=0; i<ptsx.size(); i++) {
+            double x = ptsx[i] - px;
+            double y = ptsy[i] - py;
+            double x_ = x * cos(psi) + y * sin(psi);
+            double y_ = -x * sin(psi) + y * cos(psi);
+            next_x_vals.push_back(x_);
+            next_y_vals.push_back(y_);
+          }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
