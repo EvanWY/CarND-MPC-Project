@@ -77,11 +77,12 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+    //cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
         auto j = json::parse(s);
+        std::cout<< j;
         string event = j[0].get<string>();
         if (event == "telemetry") {
           // j[1] is the data JSON object
@@ -91,6 +92,23 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          
+          double throttle = j[1]["throttle"];
+          double a = throttle; // TODO
+
+          double steering_angle = j[1]["steering_angle"];
+          double delta = - (steering_angle * deg2rad(25));
+
+          for (int i=0; i<ptsx.size(); i++) {
+            double x = ptsx[i] - px;
+            double y = ptsy[i] - py;
+            double x_ = x * cos(psi) + y * sin(psi);
+            double y_ = -x * sin(psi) + y * cos(psi);
+            ptsx[i] = x_;
+            ptsy[i] = y_;
+          }
+
+          px = py = psi = 0;
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -103,6 +121,9 @@ int main() {
           auto coeffs = polyfit(vecptsx, vecptsy, 3);
           Eigen::VectorXd coeffs_der(3);
           coeffs_der << coeffs[1], 2*coeffs[2], 3*coeffs[3];
+
+          cout << coeffs << endl;
+          cout << coeffs_der << endl;
           
           double cte = py - polyeval(coeffs, px);
           double dfx = polyeval(coeffs_der, px);
@@ -116,15 +137,16 @@ int main() {
 
           std::cout << cte << " "<< dfx << " "<< atandfx << " "<< epsi << std::endl;
 
-          Eigen::VectorXd state(6);
-          state << px, py, psi, v, cte, epsi;
+          Eigen::VectorXd state(8);
+          state << px, py, psi, v, cte, epsi, delta, a;
+          cout << "###############";
 
           auto vars = mpc.Solve(state, coeffs);
 
-          double steer_value = vars[0] / deg2rad(25);
+          double steer_value = -vars[0] / deg2rad(25);
           double throttle_value = vars[1];
 
-          std::cout << "*************" << steer_value << "*" << throttle_value << std::endl;
+          std::cout << std::endl << steer_value << "*" << throttle_value << std::endl;
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -136,14 +158,12 @@ int main() {
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
-
-          for (int i=0; i<25; i++) {
-            double x = vars[i+2] - px;
-            double y = vars[i+27] - py;
-            double x_ = x * cos(psi) + y * sin(psi);
-            double y_ = -x * sin(psi) + y * cos(psi);
-            mpc_x_vals.push_back(x_);
-            mpc_y_vals.push_back(y_);
+          int N = 6;
+          for (int i=0; i<N; i++) {
+            double x = vars[i+2];
+            double y = vars[i+2+N];
+            mpc_x_vals.push_back(x);
+            mpc_y_vals.push_back(y);
           }
 
 
@@ -154,17 +174,8 @@ int main() {
           msgJson["mpc_y"] = mpc_y_vals;
 
           //Display the waypoints/reference line
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
-
-          for (int i=0; i<ptsx.size(); i++) {
-            double x = ptsx[i] - px;
-            double y = ptsy[i] - py;
-            double x_ = x * cos(psi) + y * sin(psi);
-            double y_ = -x * sin(psi) + y * cos(psi);
-            next_x_vals.push_back(x_);
-            next_y_vals.push_back(y_);
-          }
+          vector<double> next_x_vals = ptsx;
+          vector<double> next_y_vals = ptsy;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
@@ -174,7 +185,9 @@ int main() {
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          //std::cout << msg << std::endl;
+          std::cout<< msgJson;
+          std::cout<<std::endl<<"***************" << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
@@ -184,7 +197,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          //this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

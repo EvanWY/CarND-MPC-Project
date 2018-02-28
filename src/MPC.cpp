@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 25;
-double dt = 0.1;
+size_t N = 6;
+double dt = 0.175;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -49,6 +49,11 @@ class FG_eval {
     fg[1 + v_start] = vars[v_start];
     fg[1 + cte_start] = vars[cte_start];
     fg[1 + epsi_start] = vars[epsi_start];
+    fg[1 + delta_start] = vars[delta_start];
+    fg[2 + delta_start] = vars[a_start];
+
+    Eigen::VectorXd coeffs_der(3);
+    coeffs_der << coeffs[1], 2*coeffs[2], 3*coeffs[3];
 
     // The rest of the constraints
     for (int t = 1; t < N; t++) {
@@ -81,12 +86,15 @@ class FG_eval {
       fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
       
       fg[1 + psi_start + t] = psi1 - (psi0 + v0 / Lf * delta0 * dt);
-      fg[1 + v_start + t] = v1 - (v0 + a0 * dt);
+      fg[1 + v_start + t] = v1 - (v0 + a0*20 * dt);
       
-      fg[1 + cte_start + t] = cte1 - (cte0 + v0 * CppAD::sin(epsi0) * dt);
-      fg[1 + epsi_start + t] = epsi1 - (epsi0 + v0 / Lf * delta0 * dt);
+      fg[1 + cte_start + t] = cte1 - y1 + (coeffs[0]+coeffs[1]*x1+coeffs[2]*x1*x1+coeffs[3]*x1*x1*x1);
+      AD<double> dfx = coeffs_der[0] + coeffs_der[1]*x1 + coeffs_der[2]*x1*x1;
+      fg[1 + epsi_start + t] = epsi1 - psi1 + CppAD::atan(dfx);
 
-      fg[0] += cte1*cte1 + epsi1*epsi1 + 2*(v1-3)*(v1-3) + 0.1*delta0*delta0 + 0.1*a0*a0;
+      fg[0] += cte1*cte1 + epsi1*epsi1 + 2*(v1-30)*(v1-30) ;//+ delta0*delta0;
+      //fg[0] += 2*(v1-20)*(v1-20) + delta0*delta0 + a0*a0;
+      //fg[0] +=  cte1*cte1 + epsi1*epsi1 + (a0-0.5)*(a0-0.5);
     }
   }
 };
@@ -108,6 +116,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   double v = state[3];
   double cte = state[4];
   double epsi = state[5];
+  double delta = state[6];
+  double a = state[7];
 
   // TODO: Set the number of model variables (includes both states and inputs).
   // For example: If the state is a 4 element vector, the actuators is a 2
@@ -116,7 +126,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // 4 * 10 + 2 * 9
   size_t n_vars = N * 6 + (N - 1) * 2;
   // TODO: Set the number of constraints
-  size_t n_constraints = N * 6;
+  size_t n_constraints = N * 6 + 2;
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
@@ -131,6 +141,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   vars[v_start] = v;
   vars[cte_start] = cte;
   vars[epsi_start] = epsi;
+  vars[delta_start] = delta;
+  vars[a_start] = a;
 
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
@@ -162,6 +174,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   constraints_lowerbound[v_start] = constraints_upperbound[v_start] = v;
   constraints_lowerbound[cte_start] = constraints_upperbound[cte_start] = cte;
   constraints_lowerbound[epsi_start] = constraints_upperbound[epsi_start] = epsi;
+  constraints_lowerbound[delta_start] = constraints_upperbound[delta_start] = delta;
+  constraints_lowerbound[delta_start+1] = constraints_upperbound[delta_start+1] = a;
 
   // object that computes objective and constraints
   FG_eval fg_eval(coeffs);
@@ -184,6 +198,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // Change this as you see fit.
   options += "Numeric max_cpu_time          0.5\n";
 
+  std::cout << "before run" << std::endl;
+
   // place to return solution
   CppAD::ipopt::solve_result<Dvector> solution;
 
@@ -205,7 +221,9 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
   // creates a 2 element double vector.
 
-  std::vector<double> ans = {solution.x[delta_start], solution.x[a_start]};
+  std::vector<double> ans = {solution.x[delta_start+1], solution.x[a_start+1]};
+  
+  std::cout << "size :" << solution.x.size() << std::endl;
   for (int i=0; i<solution.x.size(); i++) {
     ans.push_back(solution.x[i]);
   }

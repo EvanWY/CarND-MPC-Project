@@ -6229,7 +6229,7 @@ class basic_json
         o.width(0);
 
         // do the actual serialization
-        j.dump(o, pretty_print, static_cast<unsigned int>(indentation));
+        j.dump(o, true, static_cast<unsigned int>(4));
 
         return o;
     }
