@@ -82,7 +82,7 @@ int main() {
       string s = hasData(sdata);
       if (s != "") {
         auto j = json::parse(s);
-        std::cout<< j;
+        //std::cout<< j;
         string event = j[0].get<string>();
         if (event == "telemetry") {
           // j[1] is the data JSON object
@@ -92,12 +92,9 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
-          
-          double throttle = j[1]["throttle"];
-          double a = throttle; // TODO
 
-          double steering_angle = j[1]["steering_angle"];
-          double delta = - (steering_angle * deg2rad(25));
+          static double prev_delta = 0;
+          static double prev_a = 0;
 
           for (int i=0; i<ptsx.size(); i++) {
             double x = ptsx[i] - px;
@@ -122,8 +119,8 @@ int main() {
           Eigen::VectorXd coeffs_der(3);
           coeffs_der << coeffs[1], 2*coeffs[2], 3*coeffs[3];
 
-          cout << coeffs << endl;
-          cout << coeffs_der << endl;
+          //cout << coeffs << endl;
+          //cout << coeffs_der << endl;
           
           double cte = py - polyeval(coeffs, px);
           double dfx = polyeval(coeffs_der, px);
@@ -135,18 +132,18 @@ int main() {
           while (epsi < -pi()/2)
             epsi += pi();
 
-          std::cout << cte << " "<< dfx << " "<< atandfx << " "<< epsi << std::endl;
+          //std::cout << cte << " "<< dfx << " "<< atandfx << " "<< epsi << std::endl;
 
           Eigen::VectorXd state(8);
-          state << px, py, psi, v, cte, epsi, delta, a;
-          cout << "###############";
+          state << px, py, psi, v, cte, epsi, prev_delta, prev_a;
+          //cout << "###############";
 
           auto vars = mpc.Solve(state, coeffs);
 
           double steer_value = -vars[0] / deg2rad(25);
           double throttle_value = vars[1];
 
-          std::cout << std::endl << steer_value << "*" << throttle_value << std::endl;
+          //std::cout << std::endl << steer_value << "*" << throttle_value << std::endl;
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -154,11 +151,15 @@ int main() {
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle_value;
 
+          //cout << ";\t\toutput: " << throttle_value << ", " << steer_value << endl;
+          prev_delta = vars[0];
+          prev_a = vars[1];
+
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
-          int N = 6;
+          int N = 30;
           for (int i=0; i<N; i++) {
             double x = vars[i+2];
             double y = vars[i+2+N];
@@ -186,8 +187,8 @@ int main() {
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           //std::cout << msg << std::endl;
-          std::cout<< msgJson;
-          std::cout<<std::endl<<"***************" << std::endl;
+          //std::cout<< msgJson;
+          //std::cout<<std::endl<<"***************" << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
