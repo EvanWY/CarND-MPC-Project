@@ -93,8 +93,8 @@ class FG_eval {
       fg[1 + epsi_start + t] = epsi1 - psi1 + CppAD::atan(dfx);
 
 
-
-      fg[0] += cte1*cte1 + epsi1*epsi1 + 2*(v1-30)*(v1-30) ;//+ delta0*delta0;
+      fg[0] = -v1;
+      //fg[0] += cte1*cte1 + epsi1*epsi1 + 2*(v1-30)*(v1-30) ;//+ delta0*delta0;
       //fg[0] += 2*(v1-20)*(v1-20) + delta0*delta0 + a0*a0;
       //fg[0] +=  cte1*cte1 + epsi1*epsi1 + (a0-0.5)*(a0-0.5);
     }
@@ -121,13 +121,13 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   double prev_delta = state[6];
   double prev_a = state[7];
 
-  std::clock_t currentTimestamp = std::clock();
-  double delay = (currentTimestamp - timestamp)/ (double) CLOCKS_PER_SEC;
-  delay = 0.1;
+  //std::clock_t currentTimestamp = std::clock();
+  //double delay = (currentTimestamp - timestamp)/ (double) CLOCKS_PER_SEC;
+  double delay = 0.1;
   int fixed_steps = floor(delay / dt);
-  fixed_steps = min(int(N), fixed_steps);
-  timestamp = currentTimestamp;
-  std::cout<< std::clock()/ (double) CLOCKS_PER_SEC << " " << delay << " : " << fixed_steps <<std::endl;
+  //fixed_steps = min(int(N), fixed_steps);
+  //timestamp = currentTimestamp;
+  //std::cout<< std::clock()/ (double) CLOCKS_PER_SEC << " " << delay << " : " << fixed_steps <<std::endl;
   // TODO: Set the number of model variables (includes both states and inputs).
   // For example: If the state is a 4 element vector, the actuators is a 2
   // element vector and there are 10 timesteps. The number of variables is:

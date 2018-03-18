@@ -119,8 +119,8 @@ int main() {
           Eigen::VectorXd coeffs_der(3);
           coeffs_der << coeffs[1], 2*coeffs[2], 3*coeffs[3];
 
-          //cout << coeffs << endl;
-          //cout << coeffs_der << endl;
+          cout << coeffs << endl;
+          cout << coeffs_der << endl;
           
           double cte = py - polyeval(coeffs, px);
           double dfx = polyeval(coeffs_der, px);
@@ -143,7 +143,7 @@ int main() {
           double steer_value = -vars[0] / deg2rad(25);
           double throttle_value = vars[1];
 
-          //std::cout << std::endl << steer_value << "*" << throttle_value << std::endl;
+          std::cout << std::endl << steer_value << "*" << throttle_value << std::endl;
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -186,7 +186,7 @@ int main() {
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          //std::cout << msg << std::endl;
+          std::cout << msg << std::endl;
           //std::cout<< msgJson;
           //std::cout<<std::endl<<"***************" << std::endl;
           // Latency
