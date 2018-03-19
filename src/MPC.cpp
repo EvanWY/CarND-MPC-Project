@@ -94,26 +94,26 @@ class FG_eval {
       AD<double> dfx = coeffs_der[0] + coeffs_der[1]*x1 + coeffs_der[2]*x1*x1;
       fg[1 + epsi_start + t] = epsi1 - psi1 + CppAD::atan(dfx);
 
+      // unfortunately, even if we can compute to very small time interval, the control signal can only be updated 10 times per second.
       if (t % fixed_steps != 0) {
         v1 = v0;
       }
 
-
       //fg[0] = -v1;
       fg[0] += cte1*cte1 // meter
           + (10*epsi1) * (10*epsi1) // 
-          //+ (v1-50)*(v1-50)
-          - v1
-          //+ (60*delta0) * (60*delta0) // delta : [-0.49, 0.49]
-          //+ (2*a0) * (2*a0); // a: [-1, 1]
-          + ((v0*v0 / Lf * delta0 * v0*v0 / Lf * delta0) + a0*a0/100) / 100
+          //+ (v1-50)*(v1-50) // optimize speed to as close to 50 as possible
+          - v1 // optimize speed to as fast as possible
+          //+ (60*delta0) * (60*delta0) // delta : [-0.49, 0.49] // optimize delta0
+          //+ (2*a0) * (2*a0); // a: [-1, 1] // optimize a0
+          + ((v0*v0 / Lf * delta0 * v0*v0 / Lf * delta0) + a0*a0/100) / 100 // instad of seperating delta0 with a0, I decided to combine both acceleration and limit the combined force.
           ;
 
       if (t < N-1) {
         AD<double> delta1 = vars[delta_start + t];
         AD<double> a1 = vars[a_start + t];
-        fg[0] += (delta1 - delta0) * (delta1 - delta0) * 4
-          + (a1 - a0) * (a1 - a0) * 0.02;
+        fg[0] += (delta1 - delta0) * (delta1 - delta0) * 4 // optimize turning rate changing rate
+          + (a1 - a0) * (a1 - a0) * 0.02; // optimize acceleration changing rate
       }
       //fg[0] += 2*(v1-20)*(v1-20) + delta0*delta0 + a0*a0;
       //fg[0] +=  cte1*cte1 + epsi1*epsi1 + (a0-0.5)*(a0-0.5);
@@ -186,6 +186,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
       vars_lowerbound[i] = -10.0;
       vars_upperbound[i] = 10.0;
   }
+
+  // first fixed steps, the control signal are setted on last iteration
   for (int i = 0; i < fixed_steps; i++) {
       vars_lowerbound[i + delta_start] 
         = vars_upperbound[i + delta_start] 
