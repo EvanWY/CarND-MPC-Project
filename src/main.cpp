@@ -119,8 +119,8 @@ int main() {
           Eigen::VectorXd coeffs_der(3);
           coeffs_der << coeffs[1], 2*coeffs[2], 3*coeffs[3];
 
-          cout << coeffs << endl;
-          cout << coeffs_der << endl;
+          //cout << coeffs << endl;
+          //cout << coeffs_der << endl;
           
           double cte = py - polyeval(coeffs, px);
           double dfx = polyeval(coeffs_der, px);
@@ -136,15 +136,14 @@ int main() {
 
           Eigen::VectorXd state(8);
           state << px, py, psi, v, cte, epsi, prev_delta, prev_a;
-          //cout << "###############";
+          //cout << cte << " " << epsi << endl;
 
           auto vars = mpc.Solve(state, coeffs);
 
           double steer_value = -vars[0] / deg2rad(25);
-          double throttle_value = vars[1];
+          double throttle_value = vars[1] / 10;
 
-          std::cout << std::endl << steer_value << "*" << throttle_value << std::endl;
-
+          cout << steer_value << " " << throttle_value << endl;
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
@@ -159,7 +158,7 @@ int main() {
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
-          int N = 30;
+          int N = 60;
           for (int i=0; i<N; i++) {
             double x = vars[i+2];
             double y = vars[i+2+N];
@@ -186,7 +185,7 @@ int main() {
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          //std::cout << msg << std::endl;
           //std::cout<< msgJson;
           //std::cout<<std::endl<<"***************" << std::endl;
           // Latency

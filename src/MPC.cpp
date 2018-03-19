@@ -7,8 +7,10 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 30;
-double dt = 0.03;
+size_t N = 60;
+double dt = 0.015;
+double delay = 0.1;
+int fixed_steps = ceil(delay / dt);
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -86,15 +88,33 @@ class FG_eval {
       fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
       
       fg[1 + psi_start + t] = psi1 - (psi0 + v0 / Lf * delta0 * dt);
-      fg[1 + v_start + t] = v1 - (v0 + a0*20 * dt);
+      fg[1 + v_start + t] = v1 - (v0 + a0 * dt);
       
       fg[1 + cte_start + t] = cte1 - y1 + (coeffs[0]+coeffs[1]*x1+coeffs[2]*x1*x1+coeffs[3]*x1*x1*x1);
       AD<double> dfx = coeffs_der[0] + coeffs_der[1]*x1 + coeffs_der[2]*x1*x1;
       fg[1 + epsi_start + t] = epsi1 - psi1 + CppAD::atan(dfx);
 
+      if (t % fixed_steps != 0) {
+        v1 = v0;
+      }
 
-      fg[0] = -v1;
-      //fg[0] += cte1*cte1 + epsi1*epsi1 + 2*(v1-30)*(v1-30) ;//+ delta0*delta0;
+
+      //fg[0] = -v1;
+      fg[0] += cte1*cte1 // meter
+          + (10*epsi1) * (10*epsi1) // 
+          //+ (v1-50)*(v1-50)
+          - v1
+          //+ (60*delta0) * (60*delta0) // delta : [-0.49, 0.49]
+          //+ (2*a0) * (2*a0); // a: [-1, 1]
+          + ((v0*v0 / Lf * delta0 * v0*v0 / Lf * delta0) + a0*a0/100) / 100
+          ;
+
+      if (t < N-1) {
+        AD<double> delta1 = vars[delta_start + t];
+        AD<double> a1 = vars[a_start + t];
+        fg[0] += (delta1 - delta0) * (delta1 - delta0) * 4
+          + (a1 - a0) * (a1 - a0) * 0.02;
+      }
       //fg[0] += 2*(v1-20)*(v1-20) + delta0*delta0 + a0*a0;
       //fg[0] +=  cte1*cte1 + epsi1*epsi1 + (a0-0.5)*(a0-0.5);
     }
@@ -123,8 +143,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
   //std::clock_t currentTimestamp = std::clock();
   //double delay = (currentTimestamp - timestamp)/ (double) CLOCKS_PER_SEC;
-  double delay = 0.1;
-  int fixed_steps = floor(delay / dt);
   //fixed_steps = min(int(N), fixed_steps);
   //timestamp = currentTimestamp;
   //std::cout<< std::clock()/ (double) CLOCKS_PER_SEC << " " << delay << " : " << fixed_steps <<std::endl;
@@ -165,8 +183,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
       vars_upperbound[i] = 0.436332;
   }
   for (int i = a_start; i < n_vars; i++) {
-      vars_lowerbound[i] = -1.0;
-      vars_upperbound[i] = 1.0;
+      vars_lowerbound[i] = -10.0;
+      vars_upperbound[i] = 10.0;
   }
   for (int i = 0; i < fixed_steps; i++) {
       vars_lowerbound[i + delta_start] 
@@ -213,7 +231,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   options += "Sparse  true        reverse\n";
   // NOTE: Currently the solver has a maximum time limit of 0.5 seconds.
   // Change this as you see fit.
-  options += "Numeric max_cpu_time          0.5\n";
+  options += "Numeric max_cpu_time          100\n";
 
   //std::cout << "before run" << std::endl;
 

@@ -17,8 +17,6 @@ class MPC {
   // Solve the model given an initial state and polynomial coefficients.
   // Return the first actuatotions.
   vector<double> Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs);
- private:
-  std::clock_t timestamp = std::clock();
 };
 
 #endif /* MPC_H */
